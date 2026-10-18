@@ -1,0 +1,29 @@
+[package]
+name = "ssftalk"
+version = "0.1.0"
+edition = "2021"
+authors = ["Andy Norris <andy@solidsf.com>", "solidSF <engineering@solidsf.com>"]
+license = "Apache-2.0"
+repository = "https://github.com/solidsf-inc/ssftalk"
+homepage = "https://github.com/solidsf-inc/ssftalk"
+description = "Pure-Rust, Apache-2.0 drop-in ElevenLabs Voice API equivalent and next-generation Hamiltonian-Fourier speech synthesis, instant voice cloning, speech-to-speech, audio isolation, WSOLA dubbing, 128 kbps j128 codec, full-duplex voice rooms, and Audio-LLM mechanistic interpretability engine powered by Apple Silicon NEON/Metal 3.1 and NVIDIA Grace-Blackwell GB300/GB10 Tensor Cores."
+keywords = ["elevenlabs", "tts", "voice-cloning", "speech-to-speech", "audio-llm"]
+categories = ["multimedia::audio", "science", "API-bindings", "hardware-support"]
+
+[workspace]
+
+[features]
+default = ["tts", "voices", "sts", "isolation", "sfx", "dubbing", "duplex", "codec", "mechinterp"]
+tts = []
+voices = []
+sts = []
+isolation = []
+sfx = []
+dubbing = []
+duplex = []
+codec = []
+mechinterp = []
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

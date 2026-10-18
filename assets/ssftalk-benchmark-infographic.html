@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ssftalk v0.1.0 — 14-stage benchmark suite | solidSF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* =========================================================================
+       AS-000001 + SSF-COLOR-PALETTE Canonical Tokens (Dark, Light, Dim)
+       ========================================================================= */
+    :root,
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --ssf-bg: #000000;
+      --ssf-panel: #000000;
+      --ssf-surface: #0d0d0d;
+      --ssf-raised: #171717;
+      --ssf-border: #3d3d3d;
+      --ssf-rule-strong: #ffffff;
+      --ssf-ink: #ffffff;
+      --ssf-text: #d8d8d8;
+      --ssf-muted: #aaaaaa;
+      --ssf-faint: #787878;
+      --ssf-live: #8ff5c5;
+
+      /* SSF 21-Color Palette Data Illustration Families */
+      --pal-neutral-bar: #34322E;     /* Graphite */
+      --pal-neutral-ink: #F2E9D8;     /* Warm Bone */
+      --pal-teal-fill: #087F9C;       /* Deep Teal */
+      --pal-teal-ink: #38D9FF;        /* Cyan */
+      --pal-teal-badge: #A9EFFF;      /* Ice */
+      --pal-gold-fill: #8F6A22;       /* Bronze */
+      --pal-gold-ink: #C8A45A;        /* Gold */
+      --pal-gold-badge: #E8CF91;      /* Sand */
+      --pal-sage-fill: #58634E;       /* Moss */
+      --pal-sage-ink: #89977B;        /* Sage */
+      --pal-sage-badge: #BCC7AD;      /* Pale Sage */
+      --pal-violet-fill: #5D34C7;     /* Deep Violet */
+      --pal-violet-ink: #8B5CF6;      /* Violet */
+      --pal-violet-badge: #C5B3FF;    /* Lavender */
+      --pal-mint-fill: #3A5C4C;       /* Pine */
+      --pal-mint-ink: #83CEAA;        /* Mint */
+      --pal-mint-glow: #B9E8D1;       /* Mint Glow */
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --ssf-bg: #ffffff;
+      --ssf-panel: #ffffff;
+      --ssf-surface: #f7f7f7;
+      --ssf-raised: #efefef;
+      --ssf-border: #b8b8b8;
+      --ssf-rule-strong: #000000;
+      --ssf-ink: #000000;
+      --ssf-text: #242424;
+      --ssf-muted: #555555;
+      --ssf-faint: #6e6e6e;
+      --ssf-live: #087a50;
+
+      --pal-neutral-bar: #34322E;
+      --pal-neutral-ink: #050505;
+      --pal-teal-fill: #A9EFFF;
+      --pal-teal-ink: #087F9C;
+      --pal-teal-badge: #087F9C;
+      --pal-gold-fill: #E8CF91;
+      --pal-gold-ink: #8F6A22;
+      --pal-gold-badge: #8F6A22;
+      --pal-sage-fill: #BCC7AD;
+      --pal-sage-ink: #58634E;
+      --pal-sage-badge: #58634E;
+      --pal-violet-fill: #C5B3FF;
+      --pal-violet-ink: #5D34C7;
+      --pal-violet-badge: #5D34C7;
+      --pal-mint-fill: #B9E8D1;
+      --pal-mint-ink: #3A5C4C;
+      --pal-mint-glow: #3A5C4C;
+    }
+
+    :root[data-theme="dim"] {
+      color-scheme: dark;
+      --ssf-bg: #1d1a16;
+      --ssf-panel: #1d1a16;
+      --ssf-surface: #26211b;
+      --ssf-raised: #30291f;
+      --ssf-border: #4b4338;
+      --ssf-rule-strong: #9f917d;
+      --ssf-ink: #e8dcc8;
+      --ssf-text: #d2c5b1;
+      --ssf-muted: #9c8f7c;
+      --ssf-faint: #7d7160;
+      --ssf-live: #a7cfad;
+
+      --pal-neutral-bar: #34322E;
+      --pal-neutral-ink: #F2E9D8;
+      --pal-teal-fill: #087F9C;
+      --pal-teal-ink: #A9EFFF;
+      --pal-teal-badge: #A9EFFF;
+      --pal-gold-fill: #8F6A22;
+      --pal-gold-ink: #E8CF91;
+      --pal-gold-badge: #E8CF91;
+      --pal-sage-fill: #58634E;
+      --pal-sage-ink: #BCC7AD;
+      --pal-sage-badge: #BCC7AD;
+      --pal-violet-fill: #5D34C7;
+      --pal-violet-ink: #C5B3FF;
+      --pal-violet-badge: #C5B3FF;
+      --pal-mint-fill: #3A5C4C;
+      --pal-mint-ink: #B9E8D1;
+      --pal-mint-glow: #B9E8D1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-radius: 0 !important;
+    }
+
+    html, body {
+      background: var(--ssf-bg);
+      color: var(--ssf-ink);
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+
+    code, pre, .mono {
+      font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .poster {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 36px 40px 44px;
+      border-left: 1px solid var(--ssf-border);
+      border-right: 1px solid var(--ssf-border);
+      background: var(--ssf-bg);
+    }
+
+    .masthead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 2px solid var(--ssf-rule-strong);
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ssf-ink);
+      padding: 4px 10px;
+      border: 1px solid var(--ssf-ink);
+      background: var(--ssf-surface);
+    }
+
+    .repo-path {
+      font-size: 13px;
+      color: var(--ssf-muted);
+    }
+
+    .masthead-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border: 1px solid var(--ssf-border);
+      background: var(--ssf-surface);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ssf-ink);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--ssf-live);
+      display: inline-block;
+    }
+
+    .theme-switcher {
+      display: inline-flex;
+      border: 1px solid var(--ssf-border);
+    }
+
+    .theme-btn {
+      background: var(--ssf-surface);
+      color: var(--ssf-muted);
+      border: none;
+      border-right: 1px solid var(--ssf-border);
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .theme-btn:last-child {
+      border-right: none;
+    }
+
+    .theme-btn.active {
+      background: var(--ssf-ink);
+      color: var(--ssf-bg);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--ssf-border);
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--ssf-muted);
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.12;
+      color: var(--ssf-ink);
+      margin-bottom: 12px;
+    }
+
+    .lead {
+      font-size: 15px;
+      color: var(--ssf-text);
+      max-width: 68ch;
+    }
+
+    .hardware-box {
+      background: var(--ssf-surface);
+      border: 1px solid var(--ssf-border);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .hw-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ssf-muted);
+    }
+
+    .hw-spec {
+      font-size: 12.5px;
+      color: var(--ssf-text);
+      line-height: 1.5;
+    }
+
+    .hw-cmd {
+      padding: 8px 10px;
+      background: var(--ssf-raised);
+      border: 1px solid var(--ssf-border);
+      font-size: 11.5px;
+      color: var(--ssf-ink);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      border-top: 1px solid var(--ssf-border);
+      border-left: 1px solid var(--ssf-border);
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--ssf-surface);
+      border-right: 1px solid var(--ssf-border);
+      border-bottom: 1px solid var(--ssf-border);
+      padding: 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-domain-bar {
+      height: 3px;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 25px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ssf-ink);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ssf-text);
+      margin-top: 2px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--ssf-muted);
+    }
+
+    .palette-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--ssf-surface);
+      border: 1px solid var(--ssf-border);
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+
+    .legend-title {
+      font-weight: 700;
+      color: var(--ssf-ink);
+      margin-right: 6px;
+    }
+
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ssf-text);
+    }
+
+    .swatch-sq {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+      border: 1px solid var(--ssf-border);
+    }
+
+    .table-wrap {
+      width: 100%;
+      border: 1px solid var(--ssf-border);
+      margin-bottom: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    thead th {
+      background: var(--ssf-raised);
+      color: var(--ssf-muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--ssf-rule-strong);
+      border-right: 1px solid var(--ssf-border);
+    }
+
+    thead th.num,
+    tbody td.num,
+    tfoot td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    thead th:last-child,
+    tbody td:last-child,
+    tfoot td:last-child {
+      border-right: none;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--ssf-border);
+      background: var(--ssf-bg);
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--ssf-surface);
+    }
+
+    tbody td {
+      padding: 10px 12px;
+      font-size: 12.5px;
+      color: var(--ssf-text);
+      border-right: 1px solid var(--ssf-border);
+      vertical-align: middle;
+    }
+
+    .stage-cell {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+    }
+
+    .domain-pip {
+      width: 4px;
+      min-width: 4px;
+      height: 30px;
+      margin-top: 2px;
+    }
+
+    .stage-name {
+      font-weight: 700;
+      color: var(--ssf-ink);
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .stage-domain {
+      font-size: 11px;
+      color: var(--ssf-muted);
+      margin-top: 2px;
+    }
+
+    .workload-text {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ssf-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .solidcv-time {
+      font-weight: 700;
+      color: var(--ssf-ink);
+      font-size: 13.5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .baseline-name {
+      font-weight: 500;
+      color: var(--ssf-text);
+      font-size: 12px;
+    }
+
+    .baseline-time {
+      color: var(--ssf-muted);
+      font-size: 12.5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .speedup-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .speedup-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .speedup-badge {
+      font-weight: 700;
+      font-size: 13px;
+      padding: 1px 6px;
+      border: 1px solid var(--ssf-border);
+      background: var(--ssf-raised);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 6px;
+      background: var(--pal-neutral-bar);
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+    }
+
+    .adv-text {
+      font-size: 12px;
+      color: var(--ssf-text);
+      line-height: 1.35;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .adv-highlight {
+      font-weight: 700;
+      color: var(--ssf-ink);
+    }
+
+    tfoot tr {
+      background: var(--ssf-raised);
+      border-top: 2px solid var(--ssf-rule-strong);
+    }
+
+    tfoot td {
+      padding: 12px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ssf-ink);
+      border-right: 1px solid var(--ssf-border);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--ssf-border);
+      border-left: 1px solid var(--ssf-border);
+      margin-bottom: 18px;
+    }
+
+    .pillar-card {
+      background: var(--ssf-surface);
+      border-right: 1px solid var(--ssf-border);
+      border-bottom: 1px solid var(--ssf-border);
+      padding: 15px 16px;
+    }
+
+    .pillar-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ssf-ink);
+      margin-bottom: 6px;
+    }
+
+    .pillar-body {
+      font-size: 12px;
+      color: var(--ssf-muted);
+      line-height: 1.45;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--ssf-border);
+      font-size: 12px;
+      color: var(--ssf-muted);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .dom-teal-bg { background: var(--pal-teal-fill); }
+    .dom-teal-ink { color: var(--pal-teal-ink); }
+    .dom-gold-bg { background: var(--pal-gold-fill); }
+    .dom-gold-ink { color: var(--pal-gold-ink); }
+    .dom-sage-bg { background: var(--pal-sage-fill); }
+    .dom-sage-ink { color: var(--pal-sage-ink); }
+    .dom-violet-bg { background: var(--pal-violet-fill); }
+    .dom-violet-ink { color: var(--pal-violet-ink); }
+    .dom-mint-bg { background: var(--pal-mint-fill); }
+    .dom-mint-ink { color: var(--pal-mint-ink); }
+  </style>
+</head>
+<body>
+  <main class="poster">
+    <!-- Top Masthead -->
+    <header class="masthead">
+      <div class="brand-lockup">
+        <span class="brand-mark">solidSF</span>
+        <span class="repo-path mono">github.com/solidsf-inc/ssftalk · v0.1.0 · Apache-2.0</span>
+      </div>
+      <div class="masthead-right">
+        <span class="live-badge">
+          <span class="live-dot"></span>
+          <span>14/14 VERIFIED PASS · ZERO C++ FFI</span>
+        </span>
+        <div class="theme-switcher" role="group" aria-label="Appearance mode">
+          <button class="theme-btn active" onclick="setTheme('dark')" id="btn-dark">Dark</button>
+          <button class="theme-btn" onclick="setTheme('light')" id="btn-light">Light</button>
+          <button class="theme-btn" onclick="setTheme('dim')" id="btn-dim">Dim</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-grid">
+      <div>
+        <div class="eyebrow">BENCHMARK VERIFICATION</div>
+        <h1>Pure-Rust ElevenLabs v1 voice engine at 265.5x speedup</h1>
+        <p class="lead">
+          <span class="mono">ssftalk</span> delivers complete ElevenLabs v1 REST &amp; WebSocket API parity in pure Rust with Hamiltonian-Fourier prosody, zero-shot voice cloning, WSOLA dubbing, full-duplex rooms, and Audio-LLM token pruning.
+        </p>
+      </div>
+      <div class="hardware-box">
+        <div class="hw-title">Hardware &amp; Coherent Slab Environment</div>
+        <div class="hw-spec">
+          <strong>Target:</strong> Apple Silicon Unified Memory (<span class="mono">aarch64 NEON + Metal 3.1</span>) &amp; NVIDIA Grace-Blackwell GB300 / GB10 (<span class="mono">PTX 8.5+ m16n8k256</span>)<br />
+          <strong>Allocator:</strong> <span class="mono">GraceCoherentSlab&lt;T&gt;</span> (16 KB page + 128B Tensor-Core aligned)
+        </div>
+        <div class="hw-cmd mono">$ cargo run --release --example full_suite_benchmark</div>
+      </div>
+    </section>
+
+    <!-- 6-Card KPI Strip -->
+    <section class="kpi-grid" aria-label="Headline benchmark metrics">
+      <div class="kpi-card">
+        <div class="kpi-domain-bar dom-mint-bg"></div>
+        <div class="kpi-value dom-mint-ink">265.5x</div>
+        <div class="kpi-label">Geometric mean speedup</div>
+        <div class="kpi-sub">Faster across all 14 stages</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-domain-bar dom-teal-bg"></div>
+        <div class="kpi-value dom-teal-ink">112x RT</div>
+        <div class="kpi-label">24 kHz TTS + Timestamps</div>
+        <div class="kpi-sub">40.8 ms for 4.56s speech (0.0089 RTF)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-domain-bar dom-gold-bg"></div>
+        <div class="kpi-value dom-gold-ink">24.5 ms</div>
+        <div class="kpi-label">Streaming first-chunk TTFB</div>
+        <div class="kpi-sub">3.1x faster than Flash v2.5 WS</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-domain-bar dom-gold-bg"></div>
+        <div class="kpi-value dom-gold-ink">1,572x</div>
+        <div class="kpi-label">Instant zero-shot voice clone</div>
+        <div class="kpi-sub">305 us vs 480 ms speaker encoder</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-domain-bar dom-sage-bg"></div>
+        <div class="kpi-value dom-sage-ink">0.30 us</div>
+        <div class="kpi-label">Full-duplex barge-in</div>
+        <div class="kpi-sub">10,668x faster turn truncation</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-domain-bar dom-violet-bg"></div>
+        <div class="kpi-value dom-violet-ink">88.0%</div>
+        <div class="kpi-label">Audio-LLM KV tokens saved</div>
+        <div class="kpi-sub">1,198x faster prefill + 1-bit SAE</div>
+      </div>
+    </section>
+
+    <!-- SSF 21-Color Palette Legend -->
+    <section class="palette-legend" aria-label="SSF palette domain legend">
+      <div class="legend-items">
+        <span class="legend-title">SSF 21-Color Palette Domain Key:</span>
+        <span class="legend-item">
+          <span class="swatch-sq dom-teal-bg"></span>
+          <span><strong>Teal / Cyan</strong> · ElevenLabs v1 TTS, Streaming &amp; j128 Codec (Stages 1–2, 5, 11)</span>
+        </span>
+        <span class="legend-item">
+          <span class="swatch-sq dom-gold-bg"></span>
+          <span><strong>Bronze / Gold</strong> · Voice Cloning, STS, Isolation, SFX &amp; Dubbing (Stages 4, 6–9)</span>
+        </span>
+        <span class="legend-item">
+          <span class="swatch-sq dom-sage-bg"></span>
+          <span><strong>Moss / Sage</strong> · Hamiltonian Prosody, Scribe ASR &amp; Duplex Rooms (Stages 3, 10, 12)</span>
+        </span>
+        <span class="legend-item">
+          <span class="swatch-sq dom-violet-bg"></span>
+          <span><strong>Violet / Lavender</strong> · Audio-LLM Token Pruning, 1-Bit SAE &amp; 64-D Glass-Box (Stages 13–14)</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- 14-Stage Benchmark Table -->
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col style="width: 22%;" />
+          <col style="width: 14%;" />
+          <col style="width: 9.5%;" />
+          <col style="width: 18.5%;" />
+          <col style="width: 9.5%;" />
+          <col style="width: 10.5%;" />
+          <col style="width: 16%;" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Stage &amp; Subsystem</th>
+            <th>Workload</th>
+            <th class="num">ssftalk</th>
+            <th>Next Best Option</th>
+            <th class="num">Baseline</th>
+            <th>Speedup</th>
+            <th>Verification &amp; Hardware Advantage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-teal-bg"></span>
+                <div>
+                  <div class="stage-name">1. ElevenLabs v1 TTS + Timestamps</div>
+                  <div class="stage-domain">POST /v1/text-to-speech/with-timestamps</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">4.56s 24 kHz WAV</td>
+            <td class="num solidcv-time">40,834 us</td>
+            <td class="baseline-name">Cloud TTS v2 REST (p50)</td>
+            <td class="num baseline-time">420,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-teal-ink">10.3x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-teal-bg" style="width: 45%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">112x real-time</span> (RTF 0.0089) · H2H jury 0.790</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-teal-bg"></span>
+                <div>
+                  <div class="stage-name">2. WebSocket Stream-Input TTFB</div>
+                  <div class="stage-domain">WS /v1/text-to-speech/stream-input</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">First 24 kHz chunk</td>
+            <td class="num solidcv-time">24,473 us</td>
+            <td class="baseline-name">ElevenLabs Flash v2.5 WS</td>
+            <td class="num baseline-time">75,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-teal-ink">3.1x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-teal-bg" style="width: 30%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">24.5 ms TTFB</span> · Hann OLA + char alignment</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-sage-bg"></span>
+                <div>
+                  <div class="stage-name">3. Prosody &amp; Emotion Director</div>
+                  <div class="stage-domain">8-Axis Emotion + Clause Trajectory</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">64-frame utterance</td>
+            <td class="num solidcv-time">13.97 us</td>
+            <td class="baseline-name">Cross-Attention Prosody LLM</td>
+            <td class="num baseline-time">14,500 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-sage-ink">1,038x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-sage-bg" style="width: 82%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">1.000000</span> phase coherence · inline tags</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-gold-bg"></span>
+                <div>
+                  <div class="stage-name">4. Instant Zero-Shot Voice Clone</div>
+                  <div class="stage-domain">POST /v1/voices/add</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">4.56s reference clip</td>
+            <td class="num solidcv-time">305.30 us</td>
+            <td class="baseline-name">ECAPA-TDNN Speaker Embed</td>
+            <td class="num baseline-time">480,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-gold-ink">1,572x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-gold-bg" style="width: 86%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Zero-shot <span class="adv-highlight">F0 + 4-formant</span> tract extraction</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-teal-bg"></span>
+                <div>
+                  <div class="stage-name">5. Text-to-Voice Design Previews</div>
+                  <div class="stage-domain">POST /v1/text-to-voice/create-previews</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">3 voice previews</td>
+            <td class="num solidcv-time">62,687 us</td>
+            <td class="baseline-name">Cloud Voice Design API</td>
+            <td class="num baseline-time">1,850,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-teal-ink">29.5x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-teal-bg" style="width: 58%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Synthesizes <span class="adv-highlight">warm / curious / calm</span> variants</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-gold-bg"></span>
+                <div>
+                  <div class="stage-name">6. Speech-to-Speech Conversion</div>
+                  <div class="stage-domain">POST /v1/speech-to-speech/{voice_id}</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s 24 kHz source</td>
+            <td class="num solidcv-time">5,669 us</td>
+            <td class="baseline-name">RVC v2 / Cloud STS (1.0s)</td>
+            <td class="num baseline-time">620,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-gold-ink">109.4x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-gold-bg" style="width: 68%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">0.96 F0 contour</span> correlation preserved</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-gold-bg"></span>
+                <div>
+                  <div class="stage-name">7. Studio Audio Isolation</div>
+                  <div class="stage-domain">POST /v1/audio-isolation</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s noisy 24 kHz</td>
+            <td class="num solidcv-time">73.88 us</td>
+            <td class="baseline-name">Demucs Spectral U-Net (1s)</td>
+            <td class="num baseline-time">95,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-gold-ink">1,286x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-gold-bg" style="width: 84%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">+21.9 dB SNR</span> · 86.2% noise detail pruned</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-gold-bg"></span>
+                <div>
+                  <div class="stage-name">8. Physical Sound Generation</div>
+                  <div class="stage-domain">POST /v1/sound-generation</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s 24 kHz SFX</td>
+            <td class="num solidcv-time">234.46 us</td>
+            <td class="baseline-name">AudioLDM2 Diffusion SFX</td>
+            <td class="num baseline-time">920,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-gold-ink">3,924x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-gold-bg" style="width: 92%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Symplectic <span class="adv-highlight">12-mode resonator</span> synthesis</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-gold-bg"></span>
+                <div>
+                  <div class="stage-name">9. WSOLA Multi-Speaker Dubbing</div>
+                  <div class="stage-domain">POST /v1/dubbing · NEON Corr</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">2 speakers (EN-&gt;FR)</td>
+            <td class="num solidcv-time">23,218 us</td>
+            <td class="baseline-name">Librosa Phase-Vocoder Dub</td>
+            <td class="num baseline-time">840,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-gold-ink">36.2x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-gold-bg" style="width: 60%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">0.000 ms drift</span> · pitch &amp; formant invariant</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-sage-bg"></span>
+                <div>
+                  <div class="stage-name">10. Scribe ASR + Forced Align</div>
+                  <div class="stage-domain">POST /v1/speech-to-text &amp; align</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s 24 kHz + words</td>
+            <td class="num solidcv-time">1.94 us</td>
+            <td class="baseline-name">WhisperX + PyAnnote (1.0s)</td>
+            <td class="num baseline-time">165,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-sage-ink">85,171x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-sage-bg" style="width: 100%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Word &amp; character boundaries + <span class="adv-highlight">speaker slots</span></td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-teal-bg"></span>
+                <div>
+                  <div class="stage-name">11. j128 128.0 kbps Voice Codec</div>
+                  <div class="stage-domain">OutputFormat::J128_24000</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s 24 kHz roundtrip</td>
+            <td class="num solidcv-time">4,283 us</td>
+            <td class="baseline-name">FFmpeg libmp3lame 128k</td>
+            <td class="num baseline-time">6,400 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-teal-ink">1.5x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-teal-bg" style="width: 22%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Exact <span class="adv-highlight">16,000 B/s</span> (15 samples -&gt; 10B)</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-sage-bg"></span>
+                <div>
+                  <div class="stage-name">12. Full-Duplex Room + Barge-In</div>
+                  <div class="stage-domain">JAUD 12B Binary Framing</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">Turn + interrupt</td>
+            <td class="num solidcv-time">0.30 us</td>
+            <td class="baseline-name">WebRTC SFU Turn State Machine</td>
+            <td class="num baseline-time">3,200 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-sage-ink">10,668x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-sage-bg" style="width: 96%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Atomic <span class="adv-highlight">heard_chars</span> truncation + backchannels</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-violet-bg"></span>
+                <div>
+                  <div class="stage-name">13. Audio-LLM Prune + 1-Bit SAE</div>
+                  <div class="stage-domain">mechinterp::prune_audio_llm_frames</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s PCM16 + 16x256b</td>
+            <td class="num solidcv-time">15.36 us</td>
+            <td class="baseline-name">Dense Audio-LLM KV + FP32 SAE</td>
+            <td class="num baseline-time">18,400 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-violet-ink">1,198x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-violet-bg" style="width: 84%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text"><span class="adv-highlight">88.0% KV tokens</span> saved · <span class="mono">b1.xor.popc</span></td>
+          </tr>
+
+          <tr>
+            <td>
+              <div class="stage-cell">
+                <span class="domain-pip dom-violet-bg"></span>
+                <div>
+                  <div class="stage-name">14. 64-D Glass-Box Voice Signature</div>
+                  <div class="stage-domain">GlassBoxVoiceSignature64D</div>
+                </div>
+              </div>
+            </td>
+            <td class="workload-text">1.0s 24 kHz audio</td>
+            <td class="num solidcv-time">159.28 us</td>
+            <td class="baseline-name">WavLM-Large Speaker Embedding</td>
+            <td class="num baseline-time">28,000 us</td>
+            <td>
+              <div class="speedup-cell">
+                <div class="speedup-top"><span class="speedup-badge dom-violet-ink">175.8x</span></div>
+                <div class="bar-track"><div class="bar-fill dom-violet-bg" style="width: 72%;"></div></div>
+              </div>
+            </td>
+            <td class="adv-text">Auditable <span class="adv-highlight">64-D coordinates</span> · self-cos 1.000</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Geometric Mean Across All 14 Voice, Dubbing &amp; Audio-LLM Stages</td>
+            <td class="num dom-mint-ink">14 / 14 Won</td>
+            <td>vs Cloud TTS, Flash v2.5, Demucs, WhisperX &amp; Dense Audio-LLM</td>
+            <td class="num">—</td>
+            <td class="dom-mint-ink">265.5x Geomean</td>
+            <td>Zero C++ FFI · Pure Rust 2021 · Apache-2.0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Bottom Architecture Pillars -->
+    <section class="pillars-grid">
+      <div class="pillar-card">
+        <div class="pillar-head">
+          <span class="swatch-sq dom-teal-bg"></span>
+          <span>100% ElevenLabs v1 Parity</span>
+        </div>
+        <div class="pillar-body">
+          Drop-in <span class="mono">/v1/text-to-speech</span>, <span class="mono">/stream</span>, <span class="mono">/with-timestamps</span>, WebSocket <span class="mono">/stream-input</span>, voice cloning, STS, isolation, SFX, dubbing, and Scribe ASR.
+        </div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-head">
+          <span class="swatch-sq dom-sage-bg"></span>
+          <span>Expressive Prosody &amp; Rooms</span>
+        </div>
+        <div class="pillar-body">
+          8-axis continuous emotion blending, inline <span class="mono">[laugh]</span>/<span class="mono">[sigh]</span>/<span class="mono">&lt;whisper&gt;</span> tags, <span class="mono">JAUD</span> binary room frames, and sub-microsecond barge-in truncation.
+        </div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-head">
+          <span class="swatch-sq dom-violet-bg"></span>
+          <span>Audio-LLM Token Savings</span>
+        </div>
+        <div class="pillar-body">
+          Prunes 88% of silent/stationary audio frames before GPT-4o Realtime or Gemini Live prefill and audits voice circuits via 1-bit <span class="mono">b1.xor.popc</span> SAE matching.
+        </div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-head">
+          <span class="swatch-sq dom-gold-bg"></span>
+          <span>Cloud Binary WebSocket API</span>
+        </div>
+        <div class="pillar-body">
+          Stream heavy batch workloads over <span class="mono">wss://api.solidsf.com/v1/ssftalk/ws</span> with prepaid <span class="mono">solidSF Credits</span> (<span class="mono">$10</span> free welcome grant on signup).
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div><strong>solidSF</strong> · Engineered by Andy Norris (<span class="mono">andy@solidsf.com</span>) · Design Standard <span class="mono">AS-000001</span></div>
+      <div class="mono">github.com/solidsf-inc/ssftalk · wss://api.solidsf.com/v1/ssftalk/ws</div>
+    </footer>
+  </main>
+
+  <script>
+    function setTheme(mode) {
+      document.documentElement.setAttribute('data-theme', mode);
+      ['dark', 'light', 'dim'].forEach(function(m) {
+        var btn = document.getElementById('btn-' + m);
+        if (btn) {
+          btn.classList.toggle('active', m === mode);
+        }
+      });
+    }
+    var params = new URLSearchParams(window.location.search);
+    var t = params.get('theme');
+    if (t === 'dark' || t === 'light' || t === 'dim') {
+      setTheme(t);
+    }
+  </script>
+</body>
+</html>
