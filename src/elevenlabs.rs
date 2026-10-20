@@ -41,6 +41,10 @@ use crate::sts_isolate::{
     speech_to_speech, transcribe_scribe, AudioIsolationReceipt, DubbingReceipt, DubbingSegment,
     ForcedAlignmentReceipt, ScribeTranscript, SpeechToSpeechReceipt,
 };
+use crate::studio::{
+    EditAudioRequest, EditAudioResponse, GenerateAudioRequest, GenerateAudioResponse,
+    ProcessAudioRequest, ProcessAudioResponse, StudioEngine, UnloadModelsResponse,
+};
 use crate::vocoder::{
     apply_robot_vocoder, wsola_stretch, ArticulateStreamer, AudioChunk, HarmonicIstftVocoder,
     StopReason,
@@ -167,7 +171,7 @@ pub struct WsStreamOutputMessage {
     pub normalized_alignment: Option<CharacterAlignment>,
 }
 
-/// Complete in-process ElevenLabs v1 + `solidSF` Hamiltonian-Fourier Voice Engine (`ElevenLabsEngine`).
+/// Complete in-process ElevenLabs v1 + `solidSF` Hamiltonian-Fourier Voice & Audio Studio Engine (`ElevenLabsEngine`).
 #[derive(Debug, Clone)]
 pub struct ElevenLabsEngine {
     pub voices: VoiceLibrary,
@@ -176,6 +180,7 @@ pub struct ElevenLabsEngine {
     pub predictor: ProsodyPredictor,
     pub vocoder: HarmonicIstftVocoder,
     pub streamer: ArticulateStreamer,
+    pub studio: StudioEngine,
 }
 
 impl Default for ElevenLabsEngine {
@@ -193,6 +198,7 @@ impl ElevenLabsEngine {
             predictor: ProsodyPredictor,
             vocoder: HarmonicIstftVocoder::new(),
             streamer: ArticulateStreamer::new(),
+            studio: StudioEngine::default(),
         }
     }
 
@@ -595,6 +601,29 @@ impl ElevenLabsEngine {
     pub fn dub_timeline(&self, segments: &[DubbingSegment]) -> Result<DubbingReceipt> {
         dub_timeline_segments(&self.voices, segments)
     }
+
+    /// Audio Studio BGM, Instrument Stem/Loop & 4-Field SFX Generation (`POST /v1/audio-studio/generate`).
+    pub fn generate_studio_audio(
+        &mut self,
+        req: &GenerateAudioRequest,
+    ) -> Result<GenerateAudioResponse> {
+        self.studio.generate_audio(req)
+    }
+
+    /// Audio Studio Non-Destructive Editing (`variation`, `inpaint`, `continue` — `POST /v1/audio-studio/edit`).
+    pub fn edit_studio_audio(&mut self, req: &EditAudioRequest) -> Result<EditAudioResponse> {
+        self.studio.edit_audio(req)
+    }
+
+    /// Audio Studio Post-Processing, EBU R128 LUFS Mastering & WAV/OGG/FLAC Export (`POST /v1/audio-studio/process`).
+    pub fn process_studio_audio(&self, req: &ProcessAudioRequest) -> Result<ProcessAudioResponse> {
+        self.studio.process_audio(req)
+    }
+
+    /// Free loaded Audio Studio models (`POST /v1/audio-studio/unload`).
+    pub fn unload_studio_models(&mut self) -> UnloadModelsResponse {
+        self.studio.unload_models()
+    }
 }
 
 /// Ephemeral HTTP/1.1 Loopback Server speaking the ElevenLabs `v1` REST API (`xi-api-key` + JSON/Audio).
@@ -685,6 +714,82 @@ impl ElevenLabsLoopbackServer {
                                 format!("{{\"error\":{:?}}}", e.to_string()).into_bytes(),
                             ),
                         }
+                    } else if method == "POST" && path.starts_with("/v1/audio-studio/generate") {
+                        match serde_json::from_slice::<GenerateAudioRequest>(&body) {
+                            Ok(req) => match engine.generate_studio_audio(&req) {
+                                Ok(res) => (
+                                    "200 OK",
+                                    "application/json",
+                                    serde_json::to_vec(&res).unwrap_or_default(),
+                                ),
+                                Err(e) => (
+                                    "400 Bad Request",
+                                    "application/json",
+                                    format!("{{\"error\":{:?}}}", e.message).into_bytes(),
+                                ),
+                            },
+                            Err(e) => (
+                                "400 Bad Request",
+                                "application/json",
+                                format!("{{\"error\":{:?}}}", e.to_string()).into_bytes(),
+                            ),
+                        }
+                    } else if method == "POST" && path.starts_with("/v1/audio-studio/edit") {
+                        match serde_json::from_slice::<EditAudioRequest>(&body) {
+                            Ok(req) => match engine.edit_studio_audio(&req) {
+                                Ok(res) => (
+                                    "200 OK",
+                                    "application/json",
+                                    serde_json::to_vec(&res).unwrap_or_default(),
+                                ),
+                                Err(e) => (
+                                    "400 Bad Request",
+                                    "application/json",
+                                    format!("{{\"error\":{:?}}}", e.message).into_bytes(),
+                                ),
+                            },
+                            Err(e) => (
+                                "400 Bad Request",
+                                "application/json",
+                                format!("{{\"error\":{:?}}}", e.to_string()).into_bytes(),
+                            ),
+                        }
+                    } else if method == "POST" && path.starts_with("/v1/audio-studio/process") {
+                        match serde_json::from_slice::<ProcessAudioRequest>(&body) {
+                            Ok(req) => match engine.process_studio_audio(&req) {
+                                Ok(res) => (
+                                    "200 OK",
+                                    "application/json",
+                                    serde_json::to_vec(&res).unwrap_or_default(),
+                                ),
+                                Err(e) => (
+                                    "400 Bad Request",
+                                    "application/json",
+                                    format!("{{\"error\":{:?}}}", e.message).into_bytes(),
+                                ),
+                            },
+                            Err(e) => (
+                                "400 Bad Request",
+                                "application/json",
+                                format!("{{\"error\":{:?}}}", e.to_string()).into_bytes(),
+                            ),
+                        }
+                    } else if method == "POST" && path.starts_with("/v1/audio-studio/unload") {
+                        let res = engine.unload_studio_models();
+                        (
+                            "200 OK",
+                            "application/json",
+                            serde_json::to_vec(&res).unwrap_or_default(),
+                        )
+                    } else if method == "GET" && path.starts_with("/v1/audio-studio/mcp") {
+                        let tools = StudioEngine::mcp_tool_schemas();
+                        let json = serde_json::to_vec(&serde_json::json!({
+                            "name": "audio-studio",
+                            "instructions": crate::studio::STUDIO_MCP_INSTRUCTIONS,
+                            "tools": tools,
+                        }))
+                        .unwrap_or_default();
+                        ("200 OK", "application/json", json)
                     } else {
                         ("404 Not Found", "application/json", b"{\"error\":\"not_found\"}".to_vec())
                     };

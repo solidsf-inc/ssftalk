@@ -19,6 +19,7 @@ pub mod mechinterp;
 pub mod phonetics;
 pub mod prelude;
 pub mod sts_isolate;
+pub mod studio;
 pub mod vocoder;
 pub mod voices;
 
@@ -293,5 +294,130 @@ mod tests {
         assert_eq!(err.code, 402);
         assert!(err.message.contains("https://solidsf.com/compute-credits"));
         low_server.join();
+    }
+
+    #[test]
+    fn audio_studio_prompt_prep_generate_edit_process_and_mcp_tools_hold() {
+        let (p1, s1) = studio::prepare_studio_prompt(
+            "Lo-fi hip-hop with mellow piano",
+            studio::StudioAudioType::Music,
+            None,
+            Some(85),
+            &studio::SfxSoundFields::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            p1,
+            "TrackType: Music, VocalType: Instrumental, Lo-fi hip-hop with mellow piano. BPM: 85."
+        );
+        assert_eq!(s1, None);
+
+        let (p2, s2) = studio::prepare_studio_prompt(
+            "",
+            studio::StudioAudioType::Sfx,
+            Some(3.0),
+            None,
+            &studio::SfxSoundFields::new("glass bottle", "shattering.", "", "concrete floor, dry"),
+        )
+        .unwrap();
+        assert_eq!(
+            p2,
+            "TrackType: SFX, glass bottle, shattering, concrete floor, dry."
+        );
+        assert_eq!(s2, Some(3.0));
+
+        let (p3, s3) = studio::prepare_studio_prompt(
+            "Ambient drone. Length: 42 seconds.",
+            studio::StudioAudioType::Music,
+            None,
+            None,
+            &studio::SfxSoundFields::default(),
+        )
+        .unwrap();
+        assert_eq!(s3, Some(42.0));
+        assert!(!p3.contains("Length"));
+
+        let scratch_base = std::env::var("HOME")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|_| std::path::PathBuf::from("."))
+            .join("solidsf-scratch")
+            .join("ssftalk-unit-studio-out");
+        let _ = std::fs::remove_dir_all(&scratch_base);
+        let mut st = studio::StudioEngine::new(&scratch_base);
+        assert!(!st.unload_models().unloaded);
+
+        let gen = st
+            .generate_audio(&studio::GenerateAudioRequest {
+                audio_type: studio::StudioAudioType::Sfx,
+                duration_seconds: Some(1.0),
+                variations: 2,
+                seed: Some(7),
+                sound_source: "door".to_string(),
+                sound_action: "slam".to_string(),
+                title: Some("door test".to_string()),
+                original_idea: "heavy wooden door slamming".to_string(),
+                ..Default::default()
+            })
+            .unwrap();
+        assert_eq!(gen.prompt_used, "TrackType: SFX, door, slam.");
+        assert!(gen.included_model_load);
+        assert_eq!(gen.candidates.len(), 2);
+        assert_eq!(gen.candidates[0].seed, 7);
+        assert_eq!(gen.candidates[1].seed, 8);
+        assert!(gen.candidates[0].peak_dbfs <= -0.95);
+
+        let edit_cont = st
+            .edit_audio(&studio::EditAudioRequest {
+                input_audio: gen.candidates[0].path.clone(),
+                mode: studio::StudioEditMode::Continue,
+                prompt: "echoing hallway tail".to_string(),
+                audio_type: studio::StudioAudioType::Sfx,
+                strength: 0.6,
+                start_seconds: None,
+                end_seconds: None,
+                duration_seconds: Some(2.0),
+                overlap_seconds: 0.2,
+                variations: 1,
+                bpm: None,
+                seed: Some(11),
+                negative_prompt: None,
+                cfg: 1.0,
+                steps: 8,
+                title: Some("door_extended".to_string()),
+                original_idea: String::new(),
+                peak_ceiling_db: Some(-1.0),
+            })
+            .unwrap();
+        assert_eq!(edit_cont.seconds, 2.0);
+        assert!(edit_cont.region.is_some());
+
+        let proc_res = st
+            .process_audio(&studio::ProcessAudioRequest {
+                input_audio: edit_cont.candidates[0].path.clone(),
+                start_seconds: 0.0,
+                end_seconds: None,
+                trim_silence: false,
+                silence_threshold_db: -50.0,
+                mono: true,
+                normalize: studio::StudioNormalizeMode::Loudness,
+                target_lufs: -16.0,
+                peak_ceiling_db: -1.0,
+                r#loop: true,
+                loop_crossfade_ms: 100.0,
+                fade_in_ms: 20.0,
+                fade_out_ms: 20.0,
+                format: studio::StudioExportFormat::Flac,
+                sample_rate: 48_000,
+                ogg_quality: 0.6,
+                title: Some("door_mastered".to_string()),
+            })
+            .unwrap();
+        assert_eq!(proc_res.channels, 1);
+        assert_eq!(proc_res.format, "flac");
+        assert_eq!(proc_res.sample_rate, 48_000);
+        assert!(proc_res.output_lufs.is_some());
+        assert_eq!(proc_res.metadata_sidecar["source"]["seed"], 11);
+        assert!(st.unload_models().unloaded);
+        let _ = std::fs::remove_dir_all(&scratch_base);
     }
 }

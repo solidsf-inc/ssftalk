@@ -357,3 +357,123 @@ fn elevenlabs_http_loopback_server_and_cloud_ws_metering_roundtrip() {
     );
     ws_srv.join();
 }
+
+#[test]
+fn theorem_13_audio_studio_post_processing_loop_loudnorm_and_24bit_export_roundtrip() {
+    let scratch_dir = std::env::var("HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("."))
+        .join("solidsf-scratch")
+        .join("ssftalk-hard-verify-studio");
+    let _ = std::fs::remove_dir_all(&scratch_dir);
+    std::fs::create_dir_all(&scratch_dir).unwrap();
+
+    // 1. Peak ceiling only attenuates, never boosts; peak normalize boosts
+    let sr = 1_000u32;
+    let ramp: Vec<f32> = (0..(3 * sr as usize))
+        .map(|i| (i as f32) / ((3 * sr as usize - 1) as f32))
+        .collect();
+    let clip = StudioAudioClip::new(vec![ramp.clone(), ramp.clone()], sr).unwrap();
+
+    let quiet = StudioAudioClip::new(vec![vec![0.1; 1000], vec![0.1; 1000]], sr).unwrap();
+    let (_, ceil_gain_quiet) = quiet.peak_ceiling(-1.0);
+    assert_eq!(ceil_gain_quiet, 0.0);
+
+    let loud = StudioAudioClip::new(vec![vec![1.5; 1000], vec![1.5; 1000]], sr).unwrap();
+    let (capped, ceil_gain_loud) = loud.peak_ceiling(-1.0);
+    assert!(ceil_gain_loud < 0.0);
+    assert!((capped.stats().peak_dbfs - (-1.0)).abs() <= 0.02);
+
+    let (normed, norm_gain) = quiet.peak_normalize(-1.0);
+    assert!(norm_gain > 0.0);
+    assert!((normed.stats().peak_dbfs - (-1.0)).abs() <= 0.02);
+
+    // 2. Seamless equal-power loop crossfade continuity: out[0] == ramp[-500]
+    let looped = clip.make_loop(500.0).unwrap();
+    assert_eq!(looped.num_samples(), 3 * (sr as usize) - 500);
+    assert!((looped.channels[0][0] - ramp[ramp.len() - 500]).abs() < 1e-3);
+    assert!(clip.make_loop(2000.0).is_err());
+
+    // 3. Audible end & silence trimming on 5ms RMS windows
+    let mut with_tail_silence = vec![0.0_f32; 3000];
+    for (i, s) in with_tail_silence[..2000].iter_mut().enumerate() {
+        *s = 0.5 * (2.0 * std::f32::consts::PI * 50.0 * (i as f32) / (sr as f32)).sin();
+    }
+    let aud_clip =
+        StudioAudioClip::new(vec![with_tail_silence.clone(), with_tail_silence], sr).unwrap();
+    assert!((aud_clip.audible_end(-60.0) - 2.0).abs() <= 0.02);
+
+    // 4. Write & Read roundtrip across WAV 24-bit, FLAC 24-bit, and OGG Vorbis
+    for (fmt, ext) in [
+        (StudioExportFormat::Wav, "wav"),
+        (StudioExportFormat::Flac, "flac"),
+        (StudioExportFormat::Ogg, "ogg"),
+    ] {
+        let p = scratch_dir.join(format!("roundtrip.{ext}"));
+        write_studio_file(&p, &clip, fmt, 0.6).unwrap();
+        let loaded = read_studio_file(&p).unwrap();
+        assert_eq!(loaded.sample_rate, sr);
+        assert_eq!(loaded.num_channels(), 2);
+        assert_eq!(loaded.num_samples(), clip.num_samples());
+    }
+
+    // 5. MCP tool dispatch (`generate_audio`, `edit_audio`, `process_audio`, `unload_models`)
+    let mut studio = StudioEngine::new(&scratch_dir);
+    let gen_val = studio
+        .call_mcp_tool(
+            "generate_audio",
+            serde_json::json!({
+                "prompt": "Lo-fi hip-hop cafe beat with warm electric piano",
+                "audio_type": "music",
+                "bpm": 85,
+                "seconds": 1.5,
+                "variations": 2,
+                "seed": 42,
+                "title": "lofi_cafe"
+            }),
+        )
+        .unwrap();
+    assert_eq!(gen_val["seconds"], 1.5);
+    assert_eq!(gen_val["candidates"].as_array().unwrap().len(), 2);
+
+    let first_path = gen_val["candidates"][0]["path"].as_str().unwrap().to_string();
+    let edit_inpaint = studio
+        .call_mcp_tool(
+            "edit_audio",
+            serde_json::json!({
+                "input_audio": first_path,
+                "mode": "inpaint",
+                "prompt": "mellow jazz solo",
+                "start_seconds": 0.4,
+                "end_seconds": 1.1,
+                "seed": 99
+            }),
+        )
+        .unwrap();
+    assert_eq!(edit_inpaint["region"], serde_json::json!([0.4, 1.1]));
+
+    let proc_ogg = studio
+        .call_mcp_tool(
+            "process_audio",
+            serde_json::json!({
+                "input_audio": first_path,
+                "normalize": "loudness",
+                "target_lufs": -16.0,
+                "loop": true,
+                "loop_crossfade_ms": 100.0,
+                "format": "ogg",
+                "sample_rate": 48000
+            }),
+        )
+        .unwrap();
+    assert_eq!(proc_ogg["sample_rate"], 48000);
+    assert_eq!(proc_ogg["format"], "ogg");
+    assert!((proc_ogg["output_lufs"].as_f64().unwrap() - (-16.0)).abs() <= 1.0);
+
+    let unloaded = studio
+        .call_mcp_tool("unload_models", serde_json::json!({}))
+        .unwrap();
+    assert_eq!(unloaded["unloaded"], true);
+
+    let _ = std::fs::remove_dir_all(&scratch_dir);
+}

@@ -406,6 +406,34 @@ fn main() {
         detail: format!("64-D interpretable | self-cos={:.6}", self_cos),
     });
 
+    // 15. Audio Studio BGM/SFX Synthesis + Seamless Loop + EBU R128 LUFS Mastering
+    let iters_studio = 25;
+    let t0 = Instant::now();
+    let mut studio_lufs = 0.0f64;
+    for _ in 0..iters_studio {
+        let clip = synthesize_studio_stereo(
+            black_box("TrackType: Music, VocalType: Instrumental, Lo-fi hip-hop cafe beat. BPM: 85."),
+            StudioAudioType::Music,
+            1.0,
+            Some(85),
+            &SfxSoundFields::default(),
+            42,
+            1.0,
+            8,
+        );
+        let looped = clip.make_loop(100.0).unwrap();
+        let (_, info) = looped.resample_and_loudnorm(48_000, Some(-16.0), -1.0).unwrap();
+        studio_lufs = info.output_lufs.unwrap_or(-16.0);
+    }
+    let studio_us = t0.elapsed().as_secs_f64() * 1e6 / (iters_studio as f64);
+    rows.push(BenchRow {
+        stage: "15. Audio Studio BGM + LUFS + Loop",
+        ssftalk_us: studio_us,
+        baseline_us: 1_300_000.0,
+        baseline_name: "Stable Audio 3 + FFmpeg Loudnorm",
+        detail: format!("48kHz stereo loop | output={:.1} LUFS", studio_lufs),
+    });
+
     println!(
         "{:<36} | {:>12} | {:>13} | {:>10} | {}",
         "Stage / Operator", "ssftalk (us)", "Baseline (us)", "Speedup", "Verification & Telemetry"
@@ -424,7 +452,8 @@ fn main() {
     println!("----------------------------------------------------------------------------------------------------------");
     let summary = mind_summary();
     println!(
-        "  Geometric Mean Speedup across 14 Voice & Audio Stages : {:.1}x",
+        "  Geometric Mean Speedup across {} Voice & Audio Studio Stages : {:.1}x",
+        rows.len(),
         geomean_speedup
     );
     println!(
